@@ -8,6 +8,9 @@ import fontMetricsData from "../submodules/katex-fonts/fontMetricsData";
 import symbols from "./symbols";
 import utils from "./utils";
 import {Token} from "./Token";
+import { define, parse } from "./macro";
+
+import type { FlexibleMacroDefinition, FullMacroDefinition } from "./macro";
 
 /**
  * Provides context to macros defined by functions. Implemented by
@@ -37,16 +40,31 @@ export interface MacroContextInterface {
 /** Macro tokens (in reverse order). */
 export type MacroExpansion = {tokens: Token[], numArgs: number};
 
-type MacroDefinition = string | MacroExpansion |
+export type MacroDefinition = string | MacroExpansion |
     (MacroContextInterface => (string | MacroExpansion));
 export type MacroMap = {[string]: MacroDefinition};
+export type ExtendedMacroMap = {
+    [string]: MacroDefinition | FullMacroDefinition
+};
 
-const builtinMacros: MacroMap = {};
+const builtinMacros: ExtendedMacroMap = {};
+const builtinFullMacros: FullMacroDefinition[] = [];
 export default builtinMacros;
 
-// This function might one day accept an additional argument and do more things.
-export function defineMacro(name: string, body: MacroDefinition) {
-    builtinMacros[name] = body;
+// This function accepts the new definition format for macros with arguments
+// as well as the old format with name and simple definition for low level macros.
+// declare function defineMacro(name: string, definition: MacroDefinition): void;
+// declare function defineMacro(definition: FlexibleMacroDefinition): void;
+function defineMacro(...args: any[]): void {
+    const nameOrDefinition: string | FlexibleMacroDefinition = args[0];
+    if (typeof nameOrDefinition === "string") {
+        const definition: MacroDefinition = args[1];
+        builtinMacros[nameOrDefinition] = definition;
+    } else {
+        const macro = define(nameOrDefinition);
+        builtinMacros[nameOrDefinition.name] = macro;
+        builtinFullMacros.push(macro);
+    }
 }
 
 //////////////////////////////////////////////////////////////////////
