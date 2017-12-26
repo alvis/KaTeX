@@ -4,6 +4,8 @@
  * until only non-macro tokens remain.
  */
 
+/*eslint no-console: "off"*/
+
 import Lexer, {controlWordRegex} from "./Lexer";
 import {Token} from "./Token";
 import builtinMacros from "./macros";
