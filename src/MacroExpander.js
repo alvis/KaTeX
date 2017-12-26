@@ -8,12 +8,22 @@
 
 import Lexer, {controlWordRegex} from "./Lexer";
 import {Token} from "./Token";
+import { parse } from "./macro";
 import builtinMacros from "./macros";
 import type {Mode} from "./types";
 import ParseError from "./ParseError";
 import objectAssign from "object-assign";
 
-import type {MacroContextInterface, MacroMap, MacroExpansion} from "./macros";
+import type { FullMacroDefinition } from "./macro";
+import type {
+    MacroContextInterface,
+    MacroDefinition,
+    MacroMap,
+    MacroExpansion,
+} from "./macros";
+
+type BuiltinComplexMacros = FullMacroDefinition[];
+type BuiltinSimpleMacros = { [string]: MacroDefinition };
 
 export default class MacroExpander implements MacroContextInterface {
     lexer: Lexer;
@@ -22,8 +32,51 @@ export default class MacroExpander implements MacroContextInterface {
     mode: Mode;
 
     constructor(input: string, macros: MacroMap, mode: Mode) {
-        this.lexer = new Lexer(input);
-        this.macros = objectAssign({}, builtinMacros, macros);
+        // extract the new macro type
+        const builtinComplexMacros: BuiltinComplexMacros = (Object.entries(
+            builtinMacros
+        ).filter(
+            ([_name, definition]) =>
+                typeof definition === "object" &&
+                definition !== null &&
+                typeof definition.name !== "undefined"
+        ): [string, any][]).map(([name, definition]) => definition);
+
+        // extract the old macro type
+        const builtinSimpleMacros: BuiltinSimpleMacros = (Object.entries(
+            builtinMacros
+        ).filter(
+            ([_name, definition]) =>
+                !(
+                    typeof definition === 'object' &&
+                        definition !== null &&
+                        typeof definition.name !== 'undefined'
+                )
+        ): [string, any][]).reduce(
+            (map, [name, definition]) =>
+                objectAssign(map, {
+                    [name]: definition,
+                }),
+            {}
+        );
+
+        // parse the input for macros defined in the new format. the remaining will
+        // then passed to the old processor for further expansion
+        const parsedInput = parse(input, builtinComplexMacros);
+
+        // warn if the parsed input is an number or boolean as it cannot be consumed
+        // by the old processor. a numberic or boolean return is for high-level
+        // macros like \@if as a part of its input, not for ordinary expansion.
+        if (typeof parsedInput !== "string") {
+            throw new Error(
+                `The expansion of (${input}) is a number or boolean.`
+            );
+        }
+
+        // return to the ordinary logic with the partly parsed input
+        this.lexer = new Lexer(parsedInput);
+        this.macros = objectAssign({}, builtinSimpleMacros, macros);
+
         this.mode = mode;
         this.stack = []; // contains tokens in REVERSE order
     }
@@ -259,4 +312,3 @@ export default class MacroExpander implements MacroContextInterface {
         return expansion;
     }
 }
-
