@@ -70,6 +70,16 @@ function defineMacro(...args: any[]): void {
 //////////////////////////////////////////////////////////////////////
 // macro tools
 
+// LaTeX's \@if{#1}{#2}{#3} expands to #2 if #1 is true, otherwise #3.
+// expl3 source: \bool_if:nTF{#1}{#2}{#3}
+defineMacro({
+    name: "@if",
+    args: "mmm",
+    processor: (fullMacro: string, test: string, t: string, f?: string): string =>
+        parse(test, builtinFullMacros) ? t : f ? f : "",
+});
+
+
 // LaTeX's \@firstoftwo{#1}{#2} expands to #1, skipping #2
 // TeX source: \long\def\@firstoftwo#1#2{#1}
 defineMacro("\\@firstoftwo", function(context) {
