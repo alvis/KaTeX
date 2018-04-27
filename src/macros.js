@@ -70,6 +70,16 @@ function defineMacro(...args: any[]): void {
 //////////////////////////////////////////////////////////////////////
 // macro tools
 
+defineMacro({
+    name: "@true",
+    processor: (): boolean => true,
+});
+
+defineMacro({
+    name: "@false",
+    processor: (): boolean => false,
+});
+
 // LaTeX's \@if{#1}{#2}{#3} expands to #2 if #1 is true, otherwise #3.
 // expl3 source: \bool_if:nTF{#1}{#2}{#3}
 defineMacro({
