@@ -80,6 +80,26 @@ defineMacro({
     processor: (): boolean => false,
 });
 
+defineMacro({
+    name: "@primitive",
+    args: "m",
+    processor: (fullMacro: string, value: string): string | number | boolean => {
+        // detect boolean
+        if (["true", "false"].includes(value)) {
+            return value === "true";
+        }
+
+        // detect number
+        const numericValue = Number(value);
+        if (typeof numericValue === "number") {
+            return numericValue;
+        }
+
+        // return the original value if nothing matched
+        return value;
+    },
+});
+
 // LaTeX's \@if{#1}{#2}{#3} expands to #2 if #1 is true, otherwise #3.
 // expl3 source: \bool_if:nTF{#1}{#2}{#3}
 defineMacro({
