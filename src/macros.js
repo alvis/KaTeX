@@ -109,6 +109,13 @@ defineMacro({
         parse(test, builtinFullMacros) ? t : f ? f : "",
 });
 
+defineMacro({
+    name: "@empty",
+    args: "m",
+    processor: (fullMacro: string, test: string): boolean =>
+        typeof test === "string" && test.length === 0,
+});
+
 
 // LaTeX's \@firstoftwo{#1}{#2} expands to #1, skipping #2
 // TeX source: \long\def\@firstoftwo#1#2{#1}
